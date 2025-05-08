@@ -1,0 +1,23 @@
+crawler:
+  start-urls:
+    - https://dantri.com.vn/
+    - https://vnexpress.net/
+    - https://tuoitre.vn/
+    - https://vietnamnet.vn/
+    - https://tienphong.vn/
+    - https://thanhnien.vn/
+    - https://vtcnews.vn/
+    - https://danviet.vn/
+    - https://nhandan.vn/
+    - https://www.qdnd.vn/
+    - https://soha.vn/
+    - https://baochinhphu.vn/
+  settings:
+    max-urls-per-crawl: 100
+    default-max-level: 4
+    request-delay-ms: 200
+    thread-pool-size: 6
+    six-months-millis: 15552000000
+    min-body-length: 150
+    min-tag-length: 20
+    non-article-ttl: 18000000     # 5 h
