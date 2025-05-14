@@ -11,6 +11,7 @@ import java.util.List;
 @Component
 @ConfigurationProperties(prefix = "crawler")
 public class CrawlerProperties {
+    private String redisPrefix = "crawler";
     private List<String> startUrls = new ArrayList<>();
     private Settings settings = new Settings();
 

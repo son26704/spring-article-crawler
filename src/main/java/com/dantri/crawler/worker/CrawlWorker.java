@@ -7,11 +7,14 @@ import com.dantri.crawler.queue.CrawlQueueManager;
 import com.dantri.crawler.queue.UrlTask;
 import com.dantri.crawler.storage.ArticleStorage;
 import com.dantri.crawler.visited.NonArticleStore;
-import com.dantri.crawler.visited.VisitedUrlsManager;
+import com.dantri.crawler.visited.NonArticleUrlStore;
+//import com.dantri.crawler.visited.VisitedUrlsManager;
+import com.dantri.crawler.visited.VisitedUrlStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -27,9 +30,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CrawlWorker implements Runnable {
 
+    @Qualifier("redisVisited")
+    private final VisitedUrlStore visited;
+
+    @Qualifier("redisNonArticle")
+    private final NonArticleUrlStore nonArticleStore;
+
     private final CrawlQueueManager      queue;
-    private final VisitedUrlsManager     visited;
-    private final NonArticleStore        nonArticleStore;
+//    private final VisitedUrlsManager     visited;
+//    private final NonArticleStore        nonArticleStore;
     private final UniversalArticleParser parser;
     private final ArticleStorage         storage;
 

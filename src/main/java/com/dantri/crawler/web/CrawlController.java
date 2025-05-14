@@ -2,11 +2,14 @@ package com.dantri.crawler.web;
 
 import com.dantri.crawler.queue.CrawlQueueManager;
 import com.dantri.crawler.queue.UrlTask;
-import com.dantri.crawler.visited.NonArticleStore;
-import com.dantri.crawler.visited.VisitedUrlsManager;
+//import com.dantri.crawler.visited.NonArticleStore;
+import com.dantri.crawler.visited.NonArticleUrlStore;
+import com.dantri.crawler.visited.VisitedUrlStore;
+//import com.dantri.crawler.visited.VisitedUrlsManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +23,13 @@ import java.util.Map;
 @AllArgsConstructor
 public class CrawlController {
 
+    @Qualifier("redisVisited")
+    private final VisitedUrlStore visitedMgr;
+    @Qualifier("redisNonArticle")
+    private final NonArticleUrlStore nonArticleStore;
     private final CrawlQueueManager queueManager;
-    private final VisitedUrlsManager visitedMgr;
-    private final NonArticleStore   nonArticleStore;
+//    private final VisitedUrlsManager visitedMgr;
+//    private final NonArticleStore   nonArticleStore;
 
     @GetMapping("/queue/size")
     public Map<String, Integer> getQueueSize() {
