@@ -6,7 +6,6 @@ import com.dantri.crawler.parser.UniversalArticleParser;
 import com.dantri.crawler.queue.CrawlQueueManager;
 import com.dantri.crawler.queue.UrlTask;
 import com.dantri.crawler.storage.ArticleStorage;
-import com.dantri.crawler.visited.NonArticleStore;
 import com.dantri.crawler.visited.NonArticleUrlStore;
 //import com.dantri.crawler.visited.VisitedUrlsManager;
 import com.dantri.crawler.visited.VisitedUrlStore;
@@ -36,11 +35,11 @@ public class CrawlWorker implements Runnable {
     @Qualifier("redisNonArticle")
     private final NonArticleUrlStore nonArticleStore;
 
-    private final CrawlQueueManager      queue;
-//    private final VisitedUrlsManager     visited;
-//    private final NonArticleStore        nonArticleStore;
+    @Qualifier("redisQueue")
+    private final CrawlQueueManager queue;
+
     private final UniversalArticleParser parser;
-    private final ArticleStorage         storage;
+    private final ArticleStorage storage;
 
     private int maxLevel;
     private AtomicBoolean running;

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -16,7 +17,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CrawlJob implements Job {
 
+    @Qualifier("redisQueue")
     private final CrawlQueueManager queue;
+
     private final CrawlerProperties props;
 
     @Override

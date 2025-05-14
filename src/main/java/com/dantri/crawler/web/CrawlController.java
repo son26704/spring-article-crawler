@@ -27,9 +27,11 @@ public class CrawlController {
     private final VisitedUrlStore visitedMgr;
     @Qualifier("redisNonArticle")
     private final NonArticleUrlStore nonArticleStore;
+    @Qualifier("redisQueue")
     private final CrawlQueueManager queueManager;
+
 //    private final VisitedUrlsManager visitedMgr;
-//    private final NonArticleStore   nonArticleStore;
+//    private final NonArticleStore nonArticleStore;
 
     @GetMapping("/queue/size")
     public Map<String, Integer> getQueueSize() {

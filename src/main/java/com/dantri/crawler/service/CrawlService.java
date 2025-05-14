@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequiredArgsConstructor
 public class CrawlService implements ApplicationListener<ApplicationReadyEvent> {
 
-    private final CrawlQueueManager       queueManager;
     private final CrawlerProperties       props;
     private final SchedulerFactoryBean    schedulerFactory;
     private final ObjectProvider<CrawlWorker> workerProvider;
