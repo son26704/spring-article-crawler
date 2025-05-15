@@ -1,0 +1,59 @@
+version: '3.8'
+services:
+  redis-1:
+    image: redis:6.2
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - redis-net
+  redis-2:
+    image: redis:6.2
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - redis-net
+  redis-3:
+    image: redis:6.2
+    ports:
+      - "6381:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - redis-net
+  redis-4:
+    image: redis:6.2
+    ports:
+      - "6382:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - redis-net
+  redis-5:
+    image: redis:6.2
+    ports:
+      - "6383:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - redis-net
+  redis-6:
+    image: redis:6.2
+    ports:
+      - "6384:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - redis-net
+networks:
+  redis-net:
+    driver: bridge
