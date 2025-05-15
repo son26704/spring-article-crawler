@@ -3,7 +3,14 @@ spring:
     redis:
       host: localhost
       port: 6379
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, redis
+  endpoint:
+    health:
+      show-details: always
 crawler:
   redis-prefix: crawler
   start-urls:
