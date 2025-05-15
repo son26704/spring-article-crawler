@@ -11,6 +11,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.data.redis.connection.stream.Consumer;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
@@ -22,11 +24,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequiredArgsConstructor
 public class CrawlService implements ApplicationListener<ApplicationReadyEvent> {
 
-    private final CrawlerProperties       props;
-    private final SchedulerFactoryBean    schedulerFactory;
+    private final CrawlerProperties props;
+    private final SchedulerFactoryBean schedulerFactory;
     private final ObjectProvider<CrawlWorker> workerProvider;
-
     private final AtomicBoolean running = new AtomicBoolean(true);
+    private final StringRedisTemplate redis;
+    private final String streamKey = "crawler:queue";
+    private final String group = "crawler-group";
+    private final String consumerName = "worker-" + System.currentTimeMillis();
+    private final Consumer consumer = Consumer.from(group, consumerName);
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
@@ -82,8 +88,12 @@ public class CrawlService implements ApplicationListener<ApplicationReadyEvent> 
         try {
             schedulerFactory.getScheduler().shutdown(true);
             log.info("Quartz scheduler shut down");
+            redis.opsForStream().deleteConsumer(streamKey, consumer);
+            log.info("Deleted consumer {} from group {} in stream {}", consumerName, group, streamKey);
         } catch (SchedulerException e) {
             log.warn("Error shutting down scheduler", e);
+        } catch (Exception e) {
+            log.warn("Error deleting consumer {} from group {} in stream {}", consumerName, group, streamKey, e);
         }
         log.info("CrawlService stopped");
     }

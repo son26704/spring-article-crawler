@@ -42,23 +42,25 @@ public class RedisQueueManager implements CrawlQueueManager {
         try {
             StreamOperations<String, String, String> ops = redis.opsForStream();
             try {
-                redis.opsForStream().createGroup(streamKey, ReadOffset.latest(), group);
+                redis.opsForStream().createGroup(streamKey, ReadOffset.from("0"), group);
             } catch (Exception ignored) {}
-
             var messages = ops.read(
                     Consumer.from(group, consumer),
                     StreamReadOptions.empty().block(Duration.ofSeconds(5)).count(1),
                     StreamOffset.create(streamKey, ReadOffset.lastConsumed())
             );
-
             if (messages == null || messages.isEmpty()) return null;
-
-            Map<String, String> data = messages.get(0).getValue();
+            MapRecord<String, String, String> message = messages.get(0);
+            Map<String, String> data = message.getValue();
+            String messageId = message.getId().toString();
             String url = data.get("url");
-            int level  = Integer.parseInt(data.get("level"));
+            int level = Integer.parseInt(data.get("level"));
+            ops.acknowledge(streamKey, group, messageId);
+            ops.delete(streamKey, messageId);
+            log.debug("Acknowledged and deleted message ID: {}", messageId);
             return new UrlTask(url, level);
         } catch (Exception e) {
-            log.warn("XREADGROUP failed", e);
+            log.warn("XREADGROUP failed for streamKey={}, group={}, consumer={}", streamKey, group, consumer, e);
             return null;
         }
     }
