@@ -1,40 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} [%file:%line] - %msg%n"/>
+    <property name="LOG_DIR" value="logs"/>
 
-    <property name="LOG_PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} [%file:%line] - %msg%n"/>
-
+    <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder charset="UTF-8">
             <pattern>${LOG_PATTERN}</pattern>
         </encoder>
     </appender>
 
+    <!-- Rolling File Appender -->
     <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
-
-        <file>logs/crawler.log</file>
-
+        <file>${LOG_DIR}/crawler.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-
-            <fileNamePattern>
-                logs/%d{MM-yyyy}/%d{dd-MM}/crawler.%d{yyyy-MM-dd}.%i.log.gz
-            </fileNamePattern>
-
+            <fileNamePattern>${LOG_DIR}/%d{yyyy-MM}/%d{dd-MM}/crawler.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
-
             <maxHistory>30</maxHistory>
             <totalSizeCap>10GB</totalSizeCap>
-
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
-
         <encoder charset="UTF-8">
             <pattern>${LOG_PATTERN}</pattern>
         </encoder>
+        <!-- Tự động tạo thư mục cha nếu không tồn tại -->
+        <prudent>false</prudent>
     </appender>
 
-    <root level="info">
+    <!-- Logger cụ thể cho các package -->
+    <logger name="com.dantri.crawler" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ROLLING"/>
+    </logger>
+
+    <!-- Root logger -->
+    <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ROLLING"/>
     </root>
+
+    <!-- Hook để sửa quyền thư mục log khi khởi động -->
+    <springProperty scope="context" name="user.name" source="user.name"/>
+    <appender name="STARTUP" class="ch.qos.logback.core.FileAppender">
+        <file>${LOG_DIR}/startup.log</file>
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+        <append>false</append>
+        <immediateFlush>true</immediateFlush>
+    </appender>
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+    <appender name="STARTUP_HOOK" class="ch.qos.logback.core.FileAppender">
+        <file>${LOG_DIR}/startup_hook.log</file>
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+        <append>false</append>
+        <immediateFlush>true</immediateFlush>
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator>
+                <expression>message.contains("Starting Logback")</expression>
+            </evaluator>
+            <OnMatch>ACCEPT</OnMatch>
+            <OnMismatch>DENY</OnMismatch>
+        </filter>
+        <prudent>false</prudent>
+    </appender>
+    <turboFilter class="ch.qos.logback.classic.turbo.DynamicThresholdFilter">
+        <Key>USER</Key>
+        <DefaultThreshold>INFO</DefaultThreshold>
+        <MDCValueLevelPair>
+            <value>${user.name}</value>
+            <level>DEBUG</level>
+        </MDCValueLevelPair>
+    </turboFilter>
 </configuration>

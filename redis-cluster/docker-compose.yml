@@ -6,54 +6,112 @@ services:
       - "6379:6379"
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis-data-1:/data
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis-2:
     image: redis:6.2
     ports:
       - "6380:6379"
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis-data-2:/data
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.3
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis-3:
     image: redis:6.2
     ports:
       - "6381:6379"
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis-data-3:/data
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.4
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis-4:
     image: redis:6.2
     ports:
       - "6382:6379"
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis-data-4:/data
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.5
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis-5:
     image: redis:6.2
     ports:
       - "6383:6379"
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis-data-5:/data
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.6
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis-6:
     image: redis:6.2
     ports:
       - "6384:6379"
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis-data-6:/data
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.7
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  redis-data-1:
+  redis-data-2:
+  redis-data-3:
+  redis-data-4:
+  redis-data-5:
+  redis-data-6:
 networks:
   redis-net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
