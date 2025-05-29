@@ -2,10 +2,8 @@ package com.dantri.crawler.web;
 
 import com.dantri.crawler.queue.CrawlQueueManager;
 import com.dantri.crawler.queue.UrlTask;
-//import com.dantri.crawler.visited.NonArticleStore;
 import com.dantri.crawler.visited.NonArticleUrlStore;
 import com.dantri.crawler.visited.VisitedUrlStore;
-//import com.dantri.crawler.visited.VisitedUrlsManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +28,6 @@ public class CrawlController {
     @Qualifier("redisQueue")
     private final CrawlQueueManager queueManager;
 
-//    private final VisitedUrlsManager visitedMgr;
-//    private final NonArticleStore nonArticleStore;
-
     @GetMapping("/queue/size")
     public Map<String, Integer> getQueueSize() {
         int size = queueManager.size();
@@ -46,12 +41,17 @@ public class CrawlController {
         return ResponseEntity.ok(new EnqueueResponse("ok", req.getUrl()));
     }
 
+    @GetMapping("/queue/pending")
+    public Map<String, Long> getPendingMessagesCount() {
+        return Map.of("pendingMessages", queueManager.getPendingMessagesCount());
+    }
+
     @GetMapping("/stats")
     public Map<String, Long> getStats() {
-        long visitedCount    = visitedMgr.count();
+        long visitedCount = visitedMgr.count();
         long nonArticleCount = nonArticleStore.count();
         return Map.of(
-                "visitedUrls",    visitedCount,
+                "visitedUrls", visitedCount,
                 "nonArticleUrls", nonArticleCount
         );
     }
@@ -79,6 +79,7 @@ public class CrawlController {
     @Data static class EnqueueRequest {
         private String url;
     }
+
     @Data static class EnqueueResponse {
         private final String status;
         private final String url;

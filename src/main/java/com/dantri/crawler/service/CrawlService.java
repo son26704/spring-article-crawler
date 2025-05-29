@@ -3,6 +3,7 @@ package com.dantri.crawler.service;
 import com.dantri.crawler.config.CrawlerProperties;
 import com.dantri.crawler.job.CrawlJob;
 import com.dantri.crawler.queue.CrawlQueueManager;
+import com.dantri.crawler.queue.RedisQueueManager;
 import com.dantri.crawler.worker.CrawlWorker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,8 @@ public class CrawlService implements ApplicationListener<ApplicationReadyEvent> 
     private final CrawlerProperties props;
     private final SchedulerFactoryBean schedulerFactory;
     private final ObjectProvider<CrawlWorker> workerProvider;
+    @Qualifier("redisQueue")
+    private final CrawlQueueManager queue;
     private final AtomicBoolean running = new AtomicBoolean(true);
     private final StringRedisTemplate redis;
     private final String streamKey = "crawler:queue";
@@ -36,6 +39,9 @@ public class CrawlService implements ApplicationListener<ApplicationReadyEvent> 
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        if (queue instanceof RedisQueueManager redisQueueManager) {
+            redisQueueManager.cleanupOldConsumers(3_600_000);
+        }
         startWorkers();
         scheduleQuartz();
     }
