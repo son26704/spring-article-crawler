@@ -1,5 +1,6 @@
 package com.dantri.crawler.web;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.dantri.crawler.queue.CrawlQueueManager;
 import com.dantri.crawler.queue.UrlTask;
 import com.dantri.crawler.visited.NonArticleUrlStore;
@@ -27,6 +28,7 @@ public class CrawlController {
     private final NonArticleUrlStore nonArticleStore;
     @Qualifier("redisQueue")
     private final CrawlQueueManager queueManager;
+    private final ElasticsearchClient client;
 
     @GetMapping("/queue/size")
     public Map<String, Integer> getQueueSize() {
@@ -76,11 +78,27 @@ public class CrawlController {
         nonArticleStore.clearAll();
     }
 
-    @Data static class EnqueueRequest {
+    @PostMapping("/test-index")
+    public ResponseEntity<String> testIndex() throws IOException {
+        Map<String, Object> article = Map.of(
+                "url", "https://dantri.com.vn/test",
+                "title", "Test Article",
+                "content", "This is a test article for Elasticsearch.",
+                "published_date", "2025-05-29T08:00:00Z",
+                "tags", List.of("test", "news"),
+                "source", "dantri.com.vn"
+        );
+        client.index(i -> i.index("articles").id("https://dantri.com.vn/test").document(article));
+        return ResponseEntity.ok("Indexed test article");
+    }
+
+    @Data
+    static class EnqueueRequest {
         private String url;
     }
 
-    @Data static class EnqueueResponse {
+    @Data
+    static class EnqueueResponse {
         private final String status;
         private final String url;
     }
