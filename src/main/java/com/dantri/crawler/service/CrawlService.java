@@ -41,6 +41,7 @@ public class CrawlService implements ApplicationListener<ApplicationReadyEvent> 
     public void onApplicationEvent(ApplicationReadyEvent event) {
         if (queue instanceof RedisQueueManager redisQueueManager) {
             redisQueueManager.cleanupOldConsumers(3_600_000);
+            redisQueueManager.trimStream(100000);
         }
         startWorkers();
         scheduleQuartz();

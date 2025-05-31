@@ -22,7 +22,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class CrawlController {
 
-    @Qualifier("redisVisited")
+    @Qualifier("esVisited")
     private final VisitedUrlStore visitedMgr;
     @Qualifier("redisNonArticle")
     private final NonArticleUrlStore nonArticleStore;

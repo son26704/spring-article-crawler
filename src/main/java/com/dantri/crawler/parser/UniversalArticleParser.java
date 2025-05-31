@@ -314,6 +314,9 @@ public class UniversalArticleParser {
     private String extractByTags(Document doc) {
         StringBuilder sb = new StringBuilder();
         for (Element e : doc.select("h1,h2,h3,p,span")) {
+            if (e.parents().hasClass("footer") || e.parents().hasClass("ads") || e.hasClass("comment") || e.hasClass("form")) {
+                continue;
+            }
             String t = clean(e.text());
             if (t.length() >= minTagLength()) sb.append(t).append("\n");
         }

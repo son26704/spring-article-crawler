@@ -30,7 +30,8 @@ public class RedisQueueManager implements CrawlQueueManager {
         try {
             redis.opsForStream().add(MapRecord.create(streamKey, Map.of(
                     "url", t.getUrl(),
-                    "level", String.valueOf(t.getLevel()))));
+                    "level", String.valueOf(t.getLevel())
+            )));
         } catch (Exception e) {
             log.warn("XADD failed: {}", t.getUrl(), e);
         }
@@ -59,7 +60,7 @@ public class RedisQueueManager implements CrawlQueueManager {
                 int level = Integer.parseInt(data.get("level"));
                 ops.acknowledge(streamKey, group, messageId);
                 ops.delete(streamKey, messageId);
-                log.debug("Acknowledged and deleted message ID: {}", messageId);
+//                log.debug("Acknowledged and deleted message ID: {}", messageId);
                 return new UrlTask(url, level);
             } catch (Exception e) {
                 log.warn("XREADGROUP failed for streamKey={}, group={}, consumer={}, attempt={}/{}",
@@ -91,7 +92,6 @@ public class RedisQueueManager implements CrawlQueueManager {
     public long getPendingMessagesCount() {
         try {
             PendingMessagesSummary summary = redis.opsForStream().pending(streamKey, group);
-            assert summary != null;
             return summary.getTotalPendingMessages();
         } catch (Exception e) {
             log.warn("Failed to get pending messages count", e);
@@ -113,6 +113,15 @@ public class RedisQueueManager implements CrawlQueueManager {
             }
         } catch (Exception e) {
             log.warn("Failed to cleanup old consumers", e);
+        }
+    }
+
+    public void trimStream(long maxLength) {
+        try {
+            redis.opsForStream().trim(streamKey, maxLength);
+            log.info("Trimmed stream {} to max length {}", streamKey, maxLength);
+        } catch (Exception e) {
+            log.warn("Failed to trim stream {}", streamKey, e);
         }
     }
 }

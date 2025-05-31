@@ -2,9 +2,10 @@ package com.dantri.crawler.config;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -16,8 +17,8 @@ public class ElasticsearchInitializer {
 
     private final ElasticsearchClient client;
 
-    @PostConstruct
-    public void init() {
+    @EventListener(ContextRefreshedEvent.class)
+    public void onContextRefreshed(ContextRefreshedEvent event) {
         try {
             boolean exists = client.indices().exists(e -> e.index("articles")).value();
             if (!exists) {
@@ -30,6 +31,10 @@ public class ElasticsearchInitializer {
                                 .properties("published_date", p -> p.date(d -> d))
                                 .properties("tags", p -> p.keyword(k -> k))
                                 .properties("source", p -> p.keyword(k -> k))
+                                .properties("parse_layer", p -> p.keyword(k -> k))
+                                .properties("description", p -> p.text(t -> t.analyzer("standard")))
+                                .properties("author", p -> p.keyword(k -> k))
+                                .properties("category", p -> p.keyword(k -> k))
                         )
                 );
                 client.indices().create(request);

@@ -23,55 +23,38 @@
         <encoder charset="UTF-8">
             <pattern>${LOG_PATTERN}</pattern>
         </encoder>
-        <!-- Tự động tạo thư mục cha nếu không tồn tại -->
         <prudent>false</prudent>
     </appender>
 
-    <!-- Logger cụ thể cho các package -->
+    <!-- Logstash Appender -->
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>172.20.0.9:5044</destination>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeContext>true</includeContext>
+            <includeMdc>true</includeMdc>
+            <fieldNames>
+                <timestamp>@timestamp</timestamp>
+                <message>message</message>
+                <logger>logger</logger>
+                <thread>thread</thread>
+                <level>level</level>
+            </fieldNames>
+        </encoder>
+        <keepAliveDuration>5 minutes</keepAliveDuration>
+        <reconnectionDelay>10 seconds</reconnectionDelay>
+    </appender>
+
+    <!-- Logger cụ thể cho dự án -->
     <logger name="com.dantri.crawler" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ROLLING"/>
+        <appender-ref ref="LOGSTASH"/>
     </logger>
 
     <!-- Root logger -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ROLLING"/>
+        <appender-ref ref="LOGSTASH"/>
     </root>
-
-    <!-- Hook để sửa quyền thư mục log khi khởi động -->
-    <springProperty scope="context" name="user.name" source="user.name"/>
-    <appender name="STARTUP" class="ch.qos.logback.core.FileAppender">
-        <file>${LOG_DIR}/startup.log</file>
-        <encoder>
-            <pattern>%msg%n</pattern>
-        </encoder>
-        <append>false</append>
-        <immediateFlush>true</immediateFlush>
-    </appender>
-    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
-    <appender name="STARTUP_HOOK" class="ch.qos.logback.core.FileAppender">
-        <file>${LOG_DIR}/startup_hook.log</file>
-        <encoder>
-            <pattern>%msg%n</pattern>
-        </encoder>
-        <append>false</append>
-        <immediateFlush>true</immediateFlush>
-        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
-            <evaluator>
-                <expression>message.contains("Starting Logback")</expression>
-            </evaluator>
-            <OnMatch>ACCEPT</OnMatch>
-            <OnMismatch>DENY</OnMismatch>
-        </filter>
-        <prudent>false</prudent>
-    </appender>
-    <turboFilter class="ch.qos.logback.classic.turbo.DynamicThresholdFilter">
-        <Key>USER</Key>
-        <DefaultThreshold>INFO</DefaultThreshold>
-        <MDCValueLevelPair>
-            <value>${user.name}</value>
-            <level>DEBUG</level>
-        </MDCValueLevelPair>
-    </turboFilter>
 </configuration>

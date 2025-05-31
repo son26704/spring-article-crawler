@@ -2,6 +2,7 @@ version: '3.8'
 services:
   redis-1:
     image: redis:6.2
+    hostname: redis-1
     ports:
       - "6379:6379"
     volumes:
@@ -17,8 +18,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   redis-2:
     image: redis:6.2
+    hostname: redis-2
     ports:
       - "6380:6379"
     volumes:
@@ -34,8 +37,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   redis-3:
     image: redis:6.2
+    hostname: redis-3
     ports:
       - "6381:6379"
     volumes:
@@ -51,8 +56,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   redis-4:
     image: redis:6.2
+    hostname: redis-4
     ports:
       - "6382:6379"
     volumes:
@@ -68,8 +75,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   redis-5:
     image: redis:6.2
+    hostname: redis-5
     ports:
       - "6383:6379"
     volumes:
@@ -85,8 +94,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   redis-6:
     image: redis:6.2
+    hostname: redis-6
     ports:
       - "6384:6379"
     volumes:
@@ -102,6 +113,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     environment:
@@ -113,13 +125,15 @@ services:
     volumes:
       - es-data:/usr/share/elasticsearch/data
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.8
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
       interval: 30s
       timeout: 10s
       retries: 5
+
   logstash:
     image: docker.elastic.co/logstash/logstash:8.15.0
     volumes:
@@ -130,13 +144,15 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.9
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9600"]
       interval: 30s
       timeout: 10s
       retries: 5
+
   kibana:
     image: docker.elastic.co/kibana/kibana:8.15.0
     ports:
@@ -146,13 +162,15 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - redis-net
+      redis-net:
+        ipv4_address: 172.20.0.10
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5601/api/status"]
       interval: 30s
       timeout: 10s
       retries: 5
+
 volumes:
   redis-data-1:
   redis-data-2:
@@ -161,6 +179,7 @@ volumes:
   redis-data-5:
   redis-data-6:
   es-data:
+
 networks:
   redis-net:
     driver: bridge
