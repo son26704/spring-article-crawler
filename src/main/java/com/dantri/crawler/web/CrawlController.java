@@ -1,6 +1,8 @@
 package com.dantri.crawler.web;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.dantri.crawler.domain.Article;
 import com.dantri.crawler.queue.CrawlQueueManager;
 import com.dantri.crawler.queue.UrlTask;
 import com.dantri.crawler.visited.NonArticleUrlStore;
@@ -13,8 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -29,6 +33,8 @@ public class CrawlController {
     @Qualifier("redisQueue")
     private final CrawlQueueManager queueManager;
     private final ElasticsearchClient client;
+
+    private static final SimpleDateFormat ISO_DATE_FMT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
 
     @GetMapping("/queue/size")
     public Map<String, Integer> getQueueSize() {
@@ -78,18 +84,39 @@ public class CrawlController {
         nonArticleStore.clearAll();
     }
 
-    @PostMapping("/test-index")
-    public ResponseEntity<String> testIndex() throws IOException {
-        Map<String, Object> article = Map.of(
-                "url", "https://dantri.com.vn/test",
-                "title", "Test Article",
-                "content", "This is a test article for Elasticsearch.",
-                "published_date", "2025-05-29T08:00:00Z",
-                "tags", List.of("test", "news"),
-                "source", "dantri.com.vn"
+    @GetMapping("/search")
+    public List<Article> search(@RequestParam String keyword) throws IOException {
+        SearchResponse<Map> response = client.search(s -> s
+                        .index("articles")
+                        .query(q -> q.multiMatch(m -> m
+                                .fields("title", "content")
+                                .query(keyword)
+                        ))
+                        .size(500),
+                Map.class
         );
-        client.index(i -> i.index("articles").id("https://dantri.com.vn/test").document(article));
-        return ResponseEntity.ok("Indexed test article");
+        return response.hits().hits().stream()
+                .map(hit -> {
+                    Map<String, Object> source = hit.source();
+                    Article article = new Article();
+                    article.setUrl((String) source.get("url"));
+                    article.setTitle((String) source.get("title"));
+                    article.setDescription((String) source.get("description"));
+                    article.setContent((String) source.get("content"));
+                    article.setAuthor((String) source.get("author"));
+                    article.setCategory((String) source.get("category"));
+                    article.setParseLayer((String) source.get("parse_layer"));
+                    try {
+                        String publishedDate = (String) source.get("published_date");
+                        if (publishedDate != null) {
+                            article.setPublishTime(ISO_DATE_FMT.parse(publishedDate));
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to parse published_date for article: {}", source.get("url"));
+                    }
+                    return article;
+                })
+                .collect(Collectors.toList());
     }
 
     @Data

@@ -1,71 +1,85 @@
 package com.dantri.crawler.service;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.json.JsonData;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.io.StringReader;
 import java.util.List;
-import java.util.stream.Stream;
-
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ArticleService {
 
-    private static final Path BASE = Paths.get("data");
+    private final ElasticsearchClient client;
 
     public List<ArticleSummary> listByDomain(String domain, int limit) throws IOException {
-        Path root = BASE.resolve(domain);
-        if (!Files.isDirectory(root)) return List.of();
-
-        List<ArticleSummary> out = new ArrayList<>();
-
-        try (Stream<Path> years = Files.list(root).sorted(Comparator.reverseOrder())) {
-            for (Path y : years.toList()) {
-                try (Stream<Path> months = Files.list(y).sorted(Comparator.reverseOrder())) {
-                    for (Path m : months.toList()) {
-                        out.addAll(listInFolder(domain, y.getFileName().toString(),
-                                m.getFileName().toString()));
-                        if (out.size() >= limit) {
-                            return out.subList(0, limit);
-                        }
-                    }
-                }
-            }
-        }
-        return out;
+        final int effectiveLimit = limit <= 0 ? 100 : limit;
+        SearchResponse<Map> response = client.search(s -> s
+                        .index("articles")
+                        .query(q -> q.term(t -> t.field("source").value(domain)))
+                        .size(effectiveLimit)
+                        .sort(s1 -> s1.field(f -> f.field("published_date").order(SortOrder.Desc)))
+                        .source(s2 -> s2.filter(f -> f.includes("url", "title"))),
+                Map.class
+        );
+        return response.hits().hits().stream()
+                .map(hit -> new ArticleSummary(
+                        (String) hit.source().get("url"),
+                        (String) hit.source().get("title")
+                ))
+                .collect(Collectors.toList());
     }
 
     public List<ArticleSummary> listInFolder(String domain, String year, String month) throws IOException {
-        Path folder = BASE.resolve(domain).resolve(year).resolve(month);
-        if (!Files.isDirectory(folder)) {
-            return List.of();
-        }
+        String fromDate = String.format("%s-%s-01T00:00:00Z", year, month);
+        String toDate = String.format("%s-%s-31T23:59:59Z", year, month);
 
-        List<ArticleSummary> out = new ArrayList<>();
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(folder, "*.csv")) {
-            for (Path f : ds) {
-                try (BufferedReader br = Files.newBufferedReader(f)) {
-                    br.readLine();
-                    String line = br.readLine();
-                    if (line != null) {
-                        String[] cols = line.split(",", 3);
-                        out.add(new ArticleSummary(cols[0], cols[1], f.getFileName().toString()));
+        // Sử dụng JSON thô (của bạn)
+        String rangeQueryJson = String.format("""
+            {
+                "range": {
+                    "published_date": {
+                        "gte": "%s",
+                        "lte": "%s"
                     }
-                } catch (Exception ignored) {}
+                }
             }
-        }
-        return out;
+            """, fromDate, toDate);
+        Query rangeQuery = Query.of(q -> q.withJson(new StringReader(rangeQueryJson)));
+
+        SearchResponse<Map> response = client.search(s -> s
+                        .index("articles")
+                        .query(q -> q.bool(b -> b
+                                .filter(f -> f.term(t -> t.field("source").value(domain)))
+                                .filter(rangeQuery)
+                        ))
+                        .size(1000)
+                        .sort(s1 -> s1.field(f -> f.field("published_date").order(SortOrder.Desc)))
+                        .source(s2 -> s2.filter(f -> f.includes("url", "title"))),
+                Map.class
+        );
+        return response.hits().hits().stream()
+                .map(hit -> new ArticleSummary(
+                        (String) hit.source().get("url"),
+                        (String) hit.source().get("title")
+                ))
+                .collect(Collectors.toList());
     }
 
-    @Data @AllArgsConstructor
+    @Data
+    @AllArgsConstructor
     public static class ArticleSummary {
         private String url;
         private String title;
-        private String file;
     }
 }
