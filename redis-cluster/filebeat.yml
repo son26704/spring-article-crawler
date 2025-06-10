@@ -1,0 +1,18 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /usr/share/filebeat/logs/crawler.log
+      - /usr/share/filebeat/logs/**/*.log
+    fields:
+      app_name: crawler-app
+    fields_under_root: true
+
+output.logstash:
+  hosts: ["logstash:5044"]
+  bulk_max_size: 2048
+  timeout: 30s
+
+logging.level: info
+logging.to_files: false
+logging.to_stderr: true

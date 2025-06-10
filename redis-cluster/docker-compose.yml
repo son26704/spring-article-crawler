@@ -171,6 +171,23 @@ services:
       timeout: 10s
       retries: 5
 
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.0
+    volumes:
+      - ../../logs:/usr/share/filebeat/logs:ro
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+    depends_on:
+      - logstash
+    networks:
+      redis-net:
+        ipv4_address: 172.20.0.12
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "filebeat", "test", "output" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 volumes:
   redis-data-1:
   redis-data-2:
