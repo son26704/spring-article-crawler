@@ -97,7 +97,7 @@ public class CrawlWorker implements Runnable {
                     long age = System.currentTimeMillis() - art.getPublishTime().getTime();
                     if (age <= sixMonthsMs) {
                         storage.save(art);
-                        log.debug("Saved article: {}", url);
+//                        log.debug("Saved article: {}", url);
                     }
 //                    visited.markVisited(url);
                 } else {

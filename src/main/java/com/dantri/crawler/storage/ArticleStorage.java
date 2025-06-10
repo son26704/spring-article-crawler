@@ -40,9 +40,9 @@ public class ArticleStorage {
                     .id(a.getUrl())
                     .document(article)
             );
-            log.info("Saved article to Elasticsearch: {} via {}", a.getUrl(), a.getParseLayer());
+            log.info("Saved article: {} via {}", a.getUrl(), a.getParseLayer());
         } catch (Exception e) {
-            log.error("Error saving article to Elasticsearch: {}", a.getUrl(), e);
+            log.error("Error saving article: {}", a.getUrl(), e);
         }
     }
 }

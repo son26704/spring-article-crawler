@@ -4,75 +4,147 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.json.JsonData;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ArticleService {
 
     private final ElasticsearchClient client;
 
+    // Constants
+    private static final int DEFAULT_LIMIT = 100;
+    private static final int MAX_FOLDER_SIZE = 1000;
+    private static final String ARTICLES_INDEX = "articles";
+    private static final String SOURCE_FIELD = "source";
+    private static final String PUBLISHED_DATE_FIELD = "published_date";
+    private static final String URL_FIELD = "url";
+    private static final String TITLE_FIELD = "title";
+    private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
     public List<ArticleSummary> listByDomain(String domain, int limit) throws IOException {
-        final int effectiveLimit = limit <= 0 ? 100 : limit;
+        validateDomain(domain);
+        final int effectiveLimit = limit <= 0 ? DEFAULT_LIMIT : Math.min(limit, 10000);
+
+        log.debug("Searching articles for domain: {} with limit: {}", domain, effectiveLimit);
+
         SearchResponse<Map> response = client.search(s -> s
-                        .index("articles")
-                        .query(q -> q.term(t -> t.field("source").value(domain)))
+                        .index(ARTICLES_INDEX)
+                        .query(createTermQuery(SOURCE_FIELD, domain))
                         .size(effectiveLimit)
-                        .sort(s1 -> s1.field(f -> f.field("published_date").order(SortOrder.Desc)))
-                        .source(s2 -> s2.filter(f -> f.includes("url", "title"))),
+                        .sort(createPublishedDateSort())
+                        .source(createSourceFilter()),
                 Map.class
         );
-        return response.hits().hits().stream()
-                .map(hit -> new ArticleSummary(
-                        (String) hit.source().get("url"),
-                        (String) hit.source().get("title")
-                ))
-                .collect(Collectors.toList());
+
+        return mapToArticleSummaries(response);
     }
 
     public List<ArticleSummary> listInFolder(String domain, String year, String month) throws IOException {
-        String fromDate = String.format("%s-%s-01T00:00:00Z", year, month);
-        String toDate = String.format("%s-%s-31T23:59:59Z", year, month);
+        validateDomain(domain);
+        validateYearMonth(year, month);
 
-        // Sử dụng JSON thô (của bạn)
+        log.debug("Searching articles for domain: {} in {}/{}", domain, year, month);
+
+        // Sử dụng YearMonth để tính toán chính xác ngày cuối tháng
+        YearMonth yearMonth = YearMonth.of(Integer.parseInt(year), Integer.parseInt(month));
+        String fromDate = yearMonth.atDay(1).atStartOfDay().format(ISO_DATE_TIME);
+        String toDate = yearMonth.atEndOfMonth().atTime(23, 59, 59).format(ISO_DATE_TIME);
+
+        Query rangeQuery = createDateRangeQuery(fromDate, toDate);
+
+        SearchResponse<Map> response = client.search(s -> s
+                        .index(ARTICLES_INDEX)
+                        .query(q -> q.bool(b -> b
+                                .filter(createTermQuery(SOURCE_FIELD, domain))
+                                .filter(rangeQuery)
+                        ))
+                        .size(MAX_FOLDER_SIZE)
+                        .sort(createPublishedDateSort())
+                        .source(createSourceFilter()),
+                Map.class
+        );
+
+        return mapToArticleSummaries(response);
+    }
+
+    // Helper methods để tái sử dụng code
+    private void validateDomain(String domain) {
+        if (domain == null || domain.trim().isEmpty()) {
+            throw new IllegalArgumentException("Domain cannot be null or empty");
+        }
+    }
+
+    private void validateYearMonth(String year, String month) {
+        try {
+            int yearInt = Integer.parseInt(year);
+            int monthInt = Integer.parseInt(month);
+
+            if (yearInt < 1900 || yearInt > LocalDate.now().getYear() + 1) {
+                throw new IllegalArgumentException("Invalid year: " + year);
+            }
+
+            if (monthInt < 1 || monthInt > 12) {
+                throw new IllegalArgumentException("Invalid month: " + month);
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Year and month must be valid numbers", e);
+        }
+    }
+
+    private Query createTermQuery(String field, String value) {
+        return Query.of(q -> q.term(t -> t.field(field).value(value)));
+    }
+
+    private Query createDateRangeQuery(String fromDate, String toDate) {
         String rangeQueryJson = String.format("""
             {
                 "range": {
-                    "published_date": {
+                    "%s": {
                         "gte": "%s",
                         "lte": "%s"
                     }
                 }
             }
-            """, fromDate, toDate);
-        Query rangeQuery = Query.of(q -> q.withJson(new StringReader(rangeQueryJson)));
+            """, PUBLISHED_DATE_FIELD, fromDate, toDate);
+        return Query.of(q -> q.withJson(new StringReader(rangeQueryJson)));
+    }
 
-        SearchResponse<Map> response = client.search(s -> s
-                        .index("articles")
-                        .query(q -> q.bool(b -> b
-                                .filter(f -> f.term(t -> t.field("source").value(domain)))
-                                .filter(rangeQuery)
-                        ))
-                        .size(1000)
-                        .sort(s1 -> s1.field(f -> f.field("published_date").order(SortOrder.Desc)))
-                        .source(s2 -> s2.filter(f -> f.includes("url", "title"))),
-                Map.class
+    private co.elastic.clients.elasticsearch.core.search.SourceConfig createSourceFilter() {
+        return co.elastic.clients.elasticsearch.core.search.SourceConfig.of(s -> s
+                .filter(f -> f.includes(URL_FIELD, TITLE_FIELD))
         );
+    }
+
+    private co.elastic.clients.elasticsearch._types.SortOptions createPublishedDateSort() {
+        return co.elastic.clients.elasticsearch._types.SortOptions.of(s -> s
+                .field(f -> f.field(PUBLISHED_DATE_FIELD).order(SortOrder.Desc))
+        );
+    }
+
+    private List<ArticleSummary> mapToArticleSummaries(SearchResponse<Map> response) {
         return response.hits().hits().stream()
-                .map(hit -> new ArticleSummary(
-                        (String) hit.source().get("url"),
-                        (String) hit.source().get("title")
-                ))
+                .map(hit -> {
+                    Map<String, Object> source = hit.source();
+                    return new ArticleSummary(
+                            (String) source.get(URL_FIELD),
+                            (String) source.get(TITLE_FIELD)
+                    );
+                })
                 .collect(Collectors.toList());
     }
 

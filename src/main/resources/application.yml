@@ -40,4 +40,4 @@ crawler:
     six-months-millis: 15552000000
     min-body-length: 150
     min-tag-length: 20
-    non-article-ttl: 18000000     # 5 h
+    non-article-ttl: 18000000     # 5h
