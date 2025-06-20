@@ -94,7 +94,6 @@ public class CrawlController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) throws IOException {
 
-        // Giới hạn size tối đa để tránh quá tải
         final int finalSize = size > 100 ? 100 : size;
         final int from = page * finalSize;
 

@@ -35,7 +35,7 @@ public class CrawlWorker implements Runnable {
     @Qualifier("redisNonArticle")
     private final NonArticleUrlStore nonArticleStore;
 
-    @Qualifier("redisQueue")
+    @Qualifier("kafkaQueue")
     private final CrawlQueueManager queue;
 
     private final UniversalArticleParser parser;

@@ -1,11 +1,13 @@
 package com.dantri.crawler.queue;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 public class UrlTask {
-    private final String url;
-    private final int    level;
+    private  String url;
+    private  int    level;
 }

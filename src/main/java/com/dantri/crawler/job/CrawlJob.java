@@ -18,7 +18,7 @@ public class CrawlJob implements Job {
 
     private static final Logger log = LoggerFactory.getLogger(CrawlJob.class);
 
-    @Qualifier("redisQueue")
+    @Qualifier("kafkaQueue")
     private final CrawlQueueManager queue;
 
     private final CrawlerProperties props;
