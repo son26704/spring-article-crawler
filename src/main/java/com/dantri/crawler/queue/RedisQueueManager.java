@@ -89,16 +89,6 @@ public class RedisQueueManager implements CrawlQueueManager {
         }
     }
 
-    public long getPendingMessagesCount() {
-        try {
-            PendingMessagesSummary summary = redis.opsForStream().pending(streamKey, group);
-            return summary.getTotalPendingMessages();
-        } catch (Exception e) {
-            log.warn("Failed to get pending messages count", e);
-            return -1;
-        }
-    }
-
     public void cleanupOldConsumers(long idleThresholdMs) {
         try {
             StreamOperations<String, String, String> ops = redis.opsForStream();

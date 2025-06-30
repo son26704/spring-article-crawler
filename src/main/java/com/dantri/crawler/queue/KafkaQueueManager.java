@@ -1,6 +1,5 @@
 package com.dantri.crawler.queue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -59,14 +58,6 @@ public class KafkaQueueManager implements CrawlQueueManager {
     @Override
     public int size() {
         return queue.size();
-    }
-
-    @Override
-    public long getPendingMessagesCount() {
-        // This is complex to get accurately with Kafka without using specific APIs
-        // like KafkaConsumer.partitionsFor() and get end offsets.
-        // Returning -1 to indicate not supported/unknown for now.
-        return -1;
     }
 
     @Override

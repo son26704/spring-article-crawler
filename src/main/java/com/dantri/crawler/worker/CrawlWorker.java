@@ -15,6 +15,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Scope;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -40,6 +41,8 @@ public class CrawlWorker implements Runnable {
 
     private final UniversalArticleParser parser;
     private final ArticleStorage storage;
+    private final KafkaTemplate<String, Article> articleKafkaTemplate;
+    private static final String TOPIC = "crawl-results";
 
     private int maxLevel;
     private AtomicBoolean running;
@@ -96,7 +99,8 @@ public class CrawlWorker implements Runnable {
                 if (art != null && art.getPublishTime() != null) {
                     long age = System.currentTimeMillis() - art.getPublishTime().getTime();
                     if (age <= sixMonthsMs) {
-                        storage.save(art);
+                        articleKafkaTemplate.send(TOPIC, art.getUrl(), art);
+//                        storage.save(art);
 //                        log.debug("Saved article: {}", url);
                     }
 //                    visited.markVisited(url);

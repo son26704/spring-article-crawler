@@ -53,11 +53,6 @@ public class CrawlController {
         return ResponseEntity.ok(new EnqueueResponse("ok", req.getUrl()));
     }
 
-    @GetMapping("/queue/pending")
-    public Map<String, Long> getPendingMessagesCount() {
-        return Map.of("pendingMessages", queueManager.getPendingMessagesCount());
-    }
-
     @GetMapping("/stats")
     public Map<String, Long> getStats() {
         long visitedCount = visitedMgr.count();

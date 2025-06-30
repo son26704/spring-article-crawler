@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UrlTask {
-    private  String url;
-    private  int    level;
+    private String url;
+    private int level;
 }
